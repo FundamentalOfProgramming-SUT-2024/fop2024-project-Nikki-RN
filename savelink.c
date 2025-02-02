@@ -601,13 +601,20 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
     time_t attack_time=0;
     double elapsed;
     if(entering==1){
+        int visited_floor=0;
+        for(int i=0;i<MAX_ROOMS;i++){
+            if(visited[i]==1){
+                visited_floor=1;
+                break;
+            }
+        }
         int room_index=7;
         if(which_floor==3){
             int index=find_room(stair.y,stair.x,rooms);
             do{
                room_index=rand() % MAX_ROOMS;
             }
-            while(room_index==index || room_index==1);
+            while(room_index==index || room_index==1 || (visited_floor==1 && visited[room_index]==0));
             do{
             position_x=(rand() % (rooms[room_index].width-2))+rooms[room_index].x+1;
             position_y=(rand() % (rooms[room_index].height-2))+rooms[room_index].y+1;
@@ -619,7 +626,7 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
             do{
                room_index=rand() % MAX_ROOMS;
             }
-            while(room_index==index);
+            while(room_index==index || (visited_floor==1 && visited[room_index]==0));
             do{
             position_x=(rand() % (rooms[room_index].width-2))+rooms[room_index].x+1;
             position_y=(rand() % (rooms[room_index].height-2))+rooms[room_index].y+1;
@@ -725,7 +732,7 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
     time_t current_time = time(NULL);
     if(attack_time!=0){
         elapsed=difftime(current_time,attack_time);
-        if(elapsed>=3 && hunger==0){
+        if(elapsed>=5 && hunger==0){
             Heart+=5;
             attack_time=0;
         }
@@ -762,6 +769,7 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
     refresh();
     int which_room=find_room(position_y,position_x,rooms);
     if(which_room!=-1){
+        if(visited[which_room]==0) message_box(41,which_floor);
         visited[which_room]=1;
         room_visibility(which_floor,which_room,floor,rooms,doors,visit_map);
         if(strcmp(rooms[which_room].theme,"enchanted")!=0) enchanted_stay=0;
@@ -808,7 +816,7 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
         (position_x<COLS-1 && fire_breathing[which_floor].current_x==position_x+1 && fire_breathing[which_floor].current_y==position_y) ||
         (position_y>0 && fire_breathing[which_floor].current_y==position_y-1 && fire_breathing[which_floor].current_x==position_x) ||
         (position_y<LINES-1 && fire_breathing[which_floor].current_y==position_y+1 && fire_breathing[which_floor].current_x==position_x)){
-        Heart--;
+        Heart-=2;
         if(Heart<=0){
                        win=-1;
                        show_status=4;
@@ -821,7 +829,7 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
         (position_x<COLS-1 && giant[which_floor].current_x==position_x+1 && giant[which_floor].current_y==position_y) ||
         (position_y>0 && giant[which_floor].current_y==position_y-1 && giant[which_floor].current_x==position_x) ||
         (position_y<LINES-1 && giant[which_floor].current_y==position_y+1 && giant[which_floor].current_x==position_x)){
-        Heart--;
+        Heart-=3;
         if(Heart<=0){
                        win=-1;
                        show_status=4;
@@ -834,7 +842,7 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
         (position_x<COLS-1 && snake[which_floor].current_x==position_x+1 && snake[which_floor].current_y==position_y) ||
         (position_y>0 && snake[which_floor].current_y==position_y-1 && snake[which_floor].current_x==position_x) ||
         (position_y<LINES-1 && snake[which_floor].current_y==position_y+1 && snake[which_floor].current_x==position_x)){
-        Heart--;
+        Heart-=4;
         if(Heart<=0){
                        win=-1;
                        show_status=4;
@@ -847,7 +855,7 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
         (position_x<COLS-1 && undeed[which_floor].current_x==position_x+1 && undeed[which_floor].current_y==position_y) ||
         (position_y>0 && undeed[which_floor].current_y==position_y-1 && undeed[which_floor].current_x==position_x) ||
         (position_y<LINES-1 && undeed[which_floor].current_y==position_y+1 && undeed[which_floor].current_x==position_x)){
-        Heart--;
+        Heart-=5;
         if(Heart<=0){
                        win=-1;
                        show_status=4;
@@ -993,15 +1001,6 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
         position_y=rooms[1].y+(rand()%(rooms[1].height-2))+1;
         room_visibility(which_floor,which_room,floor,rooms,doors,visit_map);
     }
-    // if(floor_one[position_y][position_x]=='.' ||  floor_one[position_y][position_x]=='O' || floor_one[position_y][position_x]=='*'){
-    //     int ind=find_room(position_y,position_x);
-    //     for(int j=0;j<10;j++){
-    //         if(windows[ind][j].x==position_x && windows[ind][j].y==position_y+1) watch(ind,windows[ind][j].x,windows[ind][j].y,0,1);
-    //         else if(windows[ind][j].x==position_x && windows[ind][j].y==position_y-1) watch(ind,windows[ind][j].x,windows[ind][j].y,0,-1);
-    //         else if(windows[ind][j].x==position_x+1 && windows[ind][j].y==position_y) watch(ind,windows[ind][j].x,windows[ind][j].y,1,0);
-    //         else if(windows[ind][j].x==position_x-1 && windows[ind][j].y==position_y) watch(ind,windows[ind][j].x,windows[ind][j].y,-1,0);
-    //     }
-    // }
     refresh();
     if(color) attron(COLOR_PAIR(5));
     mvaddch(position_y,position_x,'P');
@@ -1603,103 +1602,6 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
     }
 }
 
-
-// void watch(int room_index,int win_x,int win_y,int view_x,int view_y){
-//     //int index=-1;
-//     if(view_x==0){
-//       if(view_y==-1){
-//         int min_distance=win_y;
-//         for(int i=0;i<MAX_ROOMS && i != room_index;i++){
-//             int distance_y=win_y-(rooms[i].y+rooms[i].height-1);
-//             if(distance_y > 0 && distance_y <= min_distance){
-//                 min_distance=distance_y;
-//                 //index=i;
-//             }
-//         }
-//         if(min_distance != win_y){
-//            int index=find_room(win_y-min_distance,win_x);
-//            if(win_x>=rooms[index].x && win_x<=rooms[index].x+rooms[index].width-1){
-//            if(visited[index]==0 || visited[index]==2) visited[index]=2;
-//            for(int y=rooms[index].y ; y<rooms[index].y + rooms[index].height ; y++){
-//                 for(int x=rooms[index].x ; x<rooms[index].x + rooms[index].width ; x++){
-//                     mvaddch(y,x,floor_one[y][x]);
-//                 }
-//             }
-//             refresh();
-//         }
-//       }
-//       }
-//       else{
-//           int min_distance=LINES-1-win_y;
-//           for(int i=0;i<MAX_ROOMS && i != room_index;i++){
-//             int distance_y=rooms[i].y-win_y;
-//             if(distance_y > 0 && distance_y <= min_distance){
-//                 min_distance=distance_y;
-//                 //index=i;
-//             }
-//             }
-//          if(min_distance != LINES-1-win_y){
-//             int index=find_room(min_distance+win_y,win_x);
-//             if(win_x>=rooms[index].x && win_x<=rooms[index].x+rooms[index].width-1){
-//             if(visited[index]==0 || visited[index]==2) visited[index]=2;
-//             for(int y=rooms[index].y ; y<rooms[index].y + rooms[index].height ; y++){
-//                 for(int x=rooms[index].x ; x<rooms[index].x + rooms[index].width ; x++){
-//                     mvaddch(y,x,floor_one[y][x]);
-//                 }
-//             }
-//             refresh();
-//          }
-//         }
-//       }
-//     }
-//     else if(view_y==0){
-//         if(view_x==-1){
-//         int min_distance=win_x;
-//         for(int i=0;i<MAX_ROOMS && i!= room_index;i++){
-//             int distance_x=win_x-(rooms[i].x+rooms[i].width-1);
-//             if(distance_x > 0 && distance_x <= min_distance){
-//                 min_distance=distance_x;
-//                 //index=i;
-//             }
-//         }
-//         if(min_distance != win_x){
-//            int index=find_room(win_y,win_x-min_distance);
-//            if(win_y>=rooms[index].y && win_y<=rooms[index].y+rooms[index].height-1){
-//            if(visited[index]==0 || visited[index]==2) visited[index]=2;
-//            for(int y=rooms[index].y ; y<rooms[index].y + rooms[index].height ; y++){
-//                 for(int x=rooms[index].x ; x<rooms[index].x + rooms[index].width ; x++){
-//                     mvaddch(y,x,floor_one[y][x]);
-//                 }
-//             }
-//             refresh();
-//            }
-//         }
-//       }
-//       else{
-//           int min_distance=COLS-1-win_x;
-//           for(int i=0;i<MAX_ROOMS && i!=room_index;i++){
-//             int distance_x=rooms[i].x-win_x;
-//             if(distance_x > 0 && distance_x <= min_distance){
-//                 min_distance=distance_x;
-//                 //index=i;
-//             }
-//             }
-//          if(min_distance != COLS-1-win_x){
-//             int index=find_room(win_y,win_x+min_distance);
-//             if(win_y>=rooms[index].y && win_y<=rooms[index].y+rooms[index].height-1){
-//             if(visited[index]==0 || visited[index]==2) visited[index]=2;
-//             for(int y=rooms[index].y ; y<rooms[index].y + rooms[index].height ; y++){
-//                 for(int x=rooms[index].x ; x<rooms[index].x + rooms[index].width ; x++){
-//                     mvaddch(y,x,floor_one[y][x]);
-//                 }
-//             }
-//             refresh();
-//          }
-//          }
-//       }
-//     }
-// }
-
 int obstacle(char c){
     return strchr(obstacles,c)!=NULL;
 }
@@ -2269,6 +2171,7 @@ void initialize(room rooms[MAX_ROOMS],door doors[MAX_ROOMS][40],door hidden[MAX_
         rooms[r].y=0;
         rooms[r].height=0;
         rooms[r].width=0;
+        strcpy(rooms[r].theme,"");
     }
     for(int d=0;d<MAX_ROOMS;d++){
         for(int i=0;i<40;i++){
@@ -2598,6 +2501,11 @@ void message_box(int message,int which_floor){
            mvwprintw(message_win,1,1,"                                        ");
            wrefresh(message_win);
            break;
+           case 41:
+           mvwprintw(message_win,1,1,"You have entered a new room.");
+           box(message_win,0,0);
+           wrefresh(message_win);
+           break;
      }
 }
 
@@ -2737,7 +2645,8 @@ void create_map(char **floor_one,int which_floor,FILE *file_one,room rooms[MAX_R
                 floor_one[traps[i][j].y][traps[i][j].x]='.';
             }
         }
-        if(!(which_floor==3 && i==1)) create_door(floor_one,i,doors,rooms);
+        // if(!(which_floor==3 && i==1)) create_door(floor_one,i,doors,rooms);
+        create_door(floor_one,i,doors,rooms);
         for(int j=0;j<3;j++){
             if(doors[i][j].x && doors[i][j].y){
                 //mvprintw(doors[i][j].y,doors[i][j].x,"+");

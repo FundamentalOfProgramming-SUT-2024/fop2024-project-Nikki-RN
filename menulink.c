@@ -249,7 +249,17 @@ void game_choice(int choice){
      switch(choice){
         case 0:
         clear();
+        initialize_game();
         new_game();
+        if(choice_music==1 || choice_music==2){
+            system("pkill mpg123");
+            printf("\e[?251");
+            fflush(stdout);
+        }
+        color=0;
+        choice_color=-1;
+        choice_level=-1;
+        choice_music=-1;
         current_player.num_of_games++;
         current_player.gold+=Gold;
         if(win==1) current_player.score++;
@@ -294,6 +304,15 @@ void game_choice(int choice){
            snprintf(file_name,sizeof(file_name),"%s.dat",current_player.user_name);
            if(access(file_name,F_OK)==0){
             resume_game();
+            if(choice_music==1 || choice_music==2){
+            system("pkill mpg123");
+            printf("\e[?251");
+            fflush(stdout);
+            }
+            color=0;
+            choice_color=-1;
+            choice_level=-1;
+            choice_music=-1;
             current_player.gold+=Gold;
             if(win==1) current_player.score++;
             if(win==1 || win==-1) current_player.experience++;
@@ -557,6 +576,7 @@ void create_password(char *pass,size_t length){
 }
 
 void signup(void){
+    color=0;
     choice_color=-1;
     choice_level=-1;
     choice_music=-1;
@@ -659,6 +679,7 @@ void login(void){
     char name[100];
     char pass[100];
     int name_found=0;
+    color=0;
     choice_color=-1;
     choice_level=-1;
     choice_music=-1;
@@ -760,6 +781,7 @@ void login(void){
 
 
 void guest(void){
+    color=0;
     choice_color=-1;
     choice_level=-1;
     choice_music=-1;
