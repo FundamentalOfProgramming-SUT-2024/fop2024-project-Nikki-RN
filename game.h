@@ -84,6 +84,13 @@ typedef struct Player{
     int experience;
 }Player;
 
+typedef struct entry
+{
+    char user_name[100];
+    time_t entry_time;
+}entry;
+
+
 //extern char user_name[100];
 extern Player current_player;
 extern struct room rooms_one[MAX_ROOMS];
