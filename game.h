@@ -9,6 +9,9 @@
 #include <unistd.h>
 #include <locale.h>
 #include <wchar.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
+
 
 #define MAX_ROOMS 6
 #define MIN_WIDTH 8
@@ -83,6 +86,13 @@ typedef struct Player{
     int num_of_games;
     int experience;
 }Player;
+
+typedef struct entry
+{
+    char user_name[100];
+    time_t entry_time;
+}entry;
+
 
 //extern char user_name[100];
 extern Player current_player;
@@ -163,6 +173,15 @@ extern int posy_save;
 extern int login_choice;
 extern int color;
 extern int choice_level;
+extern int choice_music;
+extern double song1_position;
+extern double song2_position;
+extern Mix_Music *current_song; 
+extern Mix_Music *last_song; 
+extern Mix_Music *song1;
+extern Mix_Music *song2; 
+extern Mix_Music *song3; 
+extern Mix_Music *song4;
 
 void message_box(int message,int which_floor);
 void create_map(char **floor_one,int which_floor,FILE *file_one,room rooms[MAX_ROOMS],window_room windows[MAX_ROOMS][10],door doors[MAX_ROOMS][40],pillow pillows[MAX_ROOMS][3],trap traps[MAX_ROOMS][10],int **visit);
@@ -213,5 +232,8 @@ void guest(void);
 int check_email(char *email);
 void new_game(void);
 void resume_game(void);
+void play_song(Mix_Music* song);
+void stop_song();
+void switch_song(Mix_Music* new_song);
 
 #endif 

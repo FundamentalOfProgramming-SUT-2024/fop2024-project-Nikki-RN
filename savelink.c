@@ -598,6 +598,8 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
     int position_y;
     int show_status = 0; // 0 = game page, 1 = food status, 2= weapon status, 3=spell status
     time_t last_hunger_update = time(NULL);
+    time_t food_change=time(NULL);
+    int change=0;
     time_t attack_time=0;
     double elapsed;
     if(entering==1){
@@ -683,9 +685,14 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
                     mvprintw(j,i,"%c",floor[j][i]);
                     attroff(COLOR_PAIR(1));
                 }
-                else if(floor[j][i]=='f'){
+                else if(floor[j][i]=='f' || floor[j][i]=='p' || floor[j][i]=='w'){
                     attron(COLOR_PAIR(4));
                     mvprintw(j,i,"%c",floor[j][i]);
+                    attroff(COLOR_PAIR(4));
+                }
+                else if(floor[j][i]=='0'){
+                    attron(COLOR_PAIR(4));
+                    mvprintw(j,i,"%c",'f');
                     attroff(COLOR_PAIR(4));
                 }
                 else if(floor[j][i]=='d' || floor[j][i]=='1'){
@@ -730,9 +737,18 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
     
     
     time_t current_time = time(NULL);
+    if(difftime(current_time,food_change)>=20 && change==0){
+        for(int j=0;j<LINES;j++){
+            for(int i=0;i<COLS;i++){
+                if(floor[j][i]=='p' || floor[j][i]=='w') floor[j][i]='f';
+                else if(floor[j][i]=='f') floor[j][i]='0';
+                change=1;
+            }
+        }
+    }
     if(attack_time!=0){
         elapsed=difftime(current_time,attack_time);
-        if(elapsed>=5 && hunger==0){
+        if(elapsed>=3 && hunger==0){
             Heart+=5;
             attack_time=0;
         }
@@ -781,6 +797,16 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
                        show_status=4;
                        continue;
                     }
+        }
+        if(strcmp(rooms[which_room].theme,"enchanted")==0 && (choice_music==1 || choice_music==2)){
+           switch_song(song3);
+        }
+        else if(which_floor==3 && which_room==1 && (choice_music==1 || choice_music==2)){
+           switch_song(song4);
+        }
+        else{
+            if(choice_music==1) switch_song(song1);
+            else if(choice_music==2) switch_song(song2);
         }
         //refresh();
         update_monsters(which_floor,which_room,position_x,position_y,floor,rooms);
@@ -891,9 +917,14 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
                     mvprintw(j,i,"%c",floor[j][i]);
                     attroff(COLOR_PAIR(1));
                 }
-                else if(floor[j][i]=='f'){
+                else if(floor[j][i]=='f' ||  floor[j][i]=='p' || floor[j][i]=='w'){
                     attron(COLOR_PAIR(4));
                     mvprintw(j,i,"%c",floor[j][i]);
+                    attroff(COLOR_PAIR(4));
+                }
+                else if(floor[j][i]=='0'){
+                    attron(COLOR_PAIR(4));
+                    mvprintw(j,i,"%c",'f');
                     attroff(COLOR_PAIR(4));
                 }
                 else if(floor[j][i]=='d' || floor[j][i]=='1'){
@@ -999,7 +1030,9 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
     else if(floor[position_y][position_x]=='I'){
         position_x=rooms[1].x+(rand()%(rooms[1].width-2))+1;
         position_y=rooms[1].y+(rand()%(rooms[1].height-2))+1;
-        room_visibility(which_floor,which_room,floor,rooms,doors,visit_map);
+        room_visibility(which_floor,1,floor,rooms,doors,visit_map);
+        refresh();
+        continue;
     }
     refresh();
     if(color) attron(COLOR_PAIR(5));
@@ -1105,9 +1138,14 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
                     mvprintw(j,i,"%c",floor[j][i]);
                     attroff(COLOR_PAIR(1));
                     }
-                    else if(floor[j][i]=='f'){
+                    else if(floor[j][i]=='f' || floor[j][i]=='p' || floor[j][i]=='w'){
                     attron(COLOR_PAIR(4));
                     mvprintw(j,i,"%c",floor[j][i]);
+                    attroff(COLOR_PAIR(4));
+                    }
+                    else if(floor[j][i]=='0'){
+                    attron(COLOR_PAIR(4));
+                    mvprintw(j,i,"%c",'f');
                     attroff(COLOR_PAIR(4));
                     }
                 else if(floor[j][i]=='d' || floor[j][i]=='1'){
@@ -1193,6 +1231,36 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
             else{
                 message_box(24,which_floor);
             }
+        }
+        else if(floor[position_y][position_x]=='p'){
+            if(food_collected<MAX_FOOD){
+            food_collected++;
+            spell='d';
+            mace_damage=10;
+            sword_damage=20;
+            dagger_damage=24;
+            magic_wand_damage=30;
+            normal_arrow_damage=10;
+            floor[position_y][position_x]='.';
+            }
+            else{
+                message_box(24,which_floor);
+            }
+        }
+        else if(floor[position_y][position_x]=='w'){
+            if(food_collected<MAX_FOOD){
+            food_collected++;
+            spell='s';
+            floor[position_y][position_x]='.';
+            }
+            else{
+                message_box(24,which_floor);
+            }
+        }
+        else if(floor[position_y][position_x]=='0'){
+            Health--;
+            floor[position_y][position_x]='.';
+            message_box(42,which_floor);
         }
         else if(floor[position_y][position_x]=='d'){
             dagger_count+=10;
@@ -1717,8 +1785,8 @@ void hidden_doors(int which_floor,char **floor,door doors[MAX_ROOMS][40],room ro
    for(int y=rooms[idx].y;y<rooms[idx].y+rooms[idx].height;y++){
         for(int x=rooms[idx].x;x<rooms[idx].x+rooms[idx].width;x++){
             if(floor[y][x]=='+'){
-                if((x>0 && (floor[y][x-1]=='.' || floor[y][x-1]=='O' || floor[y][x-1]=='*'  || floor[y][x-1]=='~' || floor[y][x-1]=='$' || floor[y][x-1]=='f' || floor[y][x-1]=='s' || floor[y][x-1]=='n' || floor[y][x-1]=='a' || floor[y][x-1]=='d' || floor[y][x-1]=='H' || floor[y][x-1]=='S' || floor[y][x-1]=='D' || floor[y][x-1]=='I')) ||
-                (x<COLS-1 && (floor[y][x+1]=='.' || floor[y][x+1]=='O' || floor[y][x+1]=='*' || floor[y][x+1]=='~' || floor[y][x+1]=='$' || floor[y][x+1]=='f' || floor[y][x+1]=='s' || floor[y][x+1]=='n' || floor[y][x+1]=='a' || floor[y][x+1]=='d' || floor[y][x+1]=='H' || floor[y][x+1]=='S' || floor[y][x+1]=='D' || floor[y][x+1]=='I'))){
+                if((x>0 && (floor[y][x-1]=='.' || floor[y][x-1]=='O' || floor[y][x-1]=='*'  || floor[y][x-1]=='~' || floor[y][x-1]=='$' || floor[y][x-1]=='f' || floor[y][x-1]=='p' || floor[y][x-1]=='w' || floor[y][x-1]=='0' || floor[y][x-1]=='s' || floor[y][x-1]=='n' || floor[y][x-1]=='a' || floor[y][x-1]=='d' || floor[y][x-1]=='H' || floor[y][x-1]=='S' || floor[y][x-1]=='D' || floor[y][x-1]=='I' || floor[y][x-1]=='^')) ||
+                (x<COLS-1 && (floor[y][x+1]=='.' || floor[y][x+1]=='O' || floor[y][x+1]=='*' || floor[y][x+1]=='~' || floor[y][x+1]=='$' || floor[y][x+1]=='f' || floor[y][x+1]=='p' || floor[y][x+1]=='w' || floor[y][x+1]=='0' || floor[y][x+1]=='s' || floor[y][x+1]=='n' || floor[y][x+1]=='a' || floor[y][x+1]=='d' || floor[y][x+1]=='H' || floor[y][x+1]=='S' || floor[y][x+1]=='D' || floor[y][x+1]=='I' || floor[y][x+1]=='^'))){
                     floor[y][x]='|';
                 }
                 else{
@@ -2506,6 +2574,14 @@ void message_box(int message,int which_floor){
            box(message_win,0,0);
            wrefresh(message_win);
            break;
+           case 42:
+           mvwprintw(message_win,1,1,"You have eaten a poisonous food!");
+           box(message_win,0,0);
+           wrefresh(message_win);
+           sleep(1);
+           mvwprintw(message_win,1,1,"                                        ");
+           wrefresh(message_win);
+           break;
      }
 }
 
@@ -2674,6 +2750,9 @@ void create_map(char **floor_one,int which_floor,FILE *file_one,room rooms[MAX_R
             if(floor_one[traps[i][j].y][traps[i][j].x]=='$' ||
                floor_one[traps[i][j].y][traps[i][j].x]=='~' ||
                floor_one[traps[i][j].y][traps[i][j].x]=='f' ||
+               floor_one[traps[i][j].y][traps[i][j].x]=='p' ||
+               floor_one[traps[i][j].y][traps[i][j].x]=='w' ||
+               floor_one[traps[i][j].y][traps[i][j].x]=='0' ||
                floor_one[traps[i][j].y][traps[i][j].x]=='s' ||
                floor_one[traps[i][j].y][traps[i][j].x]=='n' ||
                floor_one[traps[i][j].y][traps[i][j].x]=='a' ||
@@ -2695,8 +2774,8 @@ void create_map(char **floor_one,int which_floor,FILE *file_one,room rooms[MAX_R
     for(int y=0;y<LINES;y++){
         for(int x=0;x<COLS;x++){
             if(floor_one[y][x]=='+' && !((y<LINES-1 && floor_one[y+1][x]=='#') || (y>0 && floor_one[y-1][x]=='#') || (x<COLS-1 && floor_one[y][x+1]=='#') || (x>0 && floor_one[y][x-1]=='#') || (y==LINES-1 && ((x>0 &&floor_one[y][x-1]=='#') || (x<COLS-1 && floor_one[y][x+1]=='#'))) || (x==COLS-1 && ((y>0 &&floor_one[y-1][x]=='#') || (y<LINES-1 && floor_one[y+1][x]=='#'))) || (x==0 && ((y>0 && floor_one[y-1][x]=='#') || (y<LINES-1 && floor_one[y+1][x]=='#'))))){
-                if((x>0 && (floor_one[y][x-1]=='.' || floor_one[y][x-1]=='O' || floor_one[y][x-1]=='*' || floor_one[y][x-1]=='~' || floor_one[y][x-1]=='$' || floor_one[y][x-1]=='f' || floor_one[y][x-1]=='s' || floor_one[y][x-1]=='n' || floor_one[y][x-1]=='a' || floor_one[y][x-1]=='d' || floor_one[y][x-1]=='H' || floor_one[y][x-1]=='S' || floor_one[y][x-1]=='D' || floor_one[y][x-1]=='I')) ||
-                (x<COLS-1 && (floor_one[y][x+1]=='.' || floor_one[y][x+1]=='O' || floor_one[y][x+1]=='*'|| floor_one[y][x+1]=='$' || floor_one[y][x+1]=='~' || floor_one[y][x+1]=='f' || floor_one[y][x+1]=='s' || floor_one[y][x+1]=='n' || floor_one[y][x+1]=='a' || floor_one[y][x+1]=='d' || floor_one[y][x+1]=='H' || floor_one[y][x+1]=='S' || floor_one[y][x+1]=='D' || floor_one[y][x+1]=='I'))){
+                if((x>0 && (floor_one[y][x-1]=='.' || floor_one[y][x-1]=='O' || floor_one[y][x-1]=='*' || floor_one[y][x-1]=='~' || floor_one[y][x-1]=='$' || floor_one[y][x-1]=='f' || floor_one[y][x-1]=='p' || floor_one[y][x-1]=='w' || floor_one[y][x-1]=='0' || floor_one[y][x-1]=='s' || floor_one[y][x-1]=='n' || floor_one[y][x-1]=='a' || floor_one[y][x-1]=='d' || floor_one[y][x-1]=='H' || floor_one[y][x-1]=='S' || floor_one[y][x-1]=='D' || floor_one[y][x-1]=='I')) ||
+                (x<COLS-1 && (floor_one[y][x+1]=='.' || floor_one[y][x+1]=='O' || floor_one[y][x+1]=='*'|| floor_one[y][x+1]=='$' || floor_one[y][x+1]=='~' || floor_one[y][x+1]=='f' || floor_one[y][x+1]=='p' || floor_one[y][x+1]=='w' || floor_one[y][x+1]=='0' || floor_one[y][x+1]=='s' || floor_one[y][x+1]=='n' || floor_one[y][x+1]=='a' || floor_one[y][x+1]=='d' || floor_one[y][x+1]=='H' || floor_one[y][x+1]=='S' || floor_one[y][x+1]=='D' || floor_one[y][x+1]=='I'))){
                     floor_one[y][x]='|';
                 }
                 else{
@@ -2836,6 +2915,9 @@ void create_corridor(int which_floor,char **floor_one,door doors[MAX_ROOMS][40])
                 floor_one[current_y][current_x]== '$' ||
                 floor_one[current_y][current_x]== '~' ||
                 floor_one[current_y][current_x]=='f'  ||
+                floor_one[current_y][current_x]=='p'  ||
+                floor_one[current_y][current_x]=='w'  ||
+                floor_one[current_y][current_x]=='0'  ||
                 floor_one[current_y][current_x]=='s'  ||
                 floor_one[current_y][current_x]=='n'  ||
                 floor_one[current_y][current_x]=='a'  ||
@@ -2907,7 +2989,25 @@ void create_food(char **floor,room rooms[MAX_ROOMS]){
             position_y=rooms[i].y+(rand() % (rooms[i].height - 2))+1;
             floor[position_y][position_x]='f';
         }
-     }
+        number=rand()%2;
+        for(int j=0;j<number;j++){
+            position_x=rooms[i].x+(rand() % (rooms[i].width - 2))+1;
+            position_y=rooms[i].y+(rand() % (rooms[i].height - 2))+1;
+            floor[position_y][position_x]='p';
+        }
+        number=rand()%2;
+        for(int j=0;j<number;j++){
+            position_x=rooms[i].x+(rand() % (rooms[i].width - 2))+1;
+            position_y=rooms[i].y+(rand() % (rooms[i].height - 2))+1;
+            floor[position_y][position_x]='w';
+        }
+        number=rand()%2;
+        for(int j=0;j<number;j++){
+            position_x=rooms[i].x+(rand() % (rooms[i].width - 2))+1;
+            position_y=rooms[i].y+(rand() % (rooms[i].height - 2))+1;
+            floor[position_y][position_x]='0';
+        }
+    }
 }
 
 void create_weapon(char **floor,room rooms[MAX_ROOMS]){

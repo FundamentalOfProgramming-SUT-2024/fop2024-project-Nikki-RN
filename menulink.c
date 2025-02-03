@@ -3,6 +3,7 @@
 
 
 Player current_player;
+entry player_entry;
 int login_choice=0;
 int quit=1;
 int quit_from_setting=1;
@@ -12,6 +13,67 @@ int choice_color=-1;
 int choice_level=-1;
 int choice_music=-1;
 int music=1;
+double song1_position=0.0;
+double song2_position=0.0;
+Mix_Music *current_song = NULL; 
+Mix_Music *last_song = NULL; 
+Mix_Music *song1;
+Mix_Music *song2; 
+Mix_Music *song3; 
+Mix_Music *song4;
+
+int init_sdl_mixer() {
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+        return -1;
+    }
+
+    if (Mix_Init(MIX_INIT_MP3) == 0) {
+        return -1;
+    }
+
+    if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 4096) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+void play_song(Mix_Music* song) {
+    if (song == NULL) {
+        return;
+    }
+
+    if (current_song != song) {
+        if (Mix_PlayMusic(song, -1) == -1) {
+        } else {
+            last_song = current_song; // Save the current song as last song
+            current_song = song; // Set the new current song
+        }
+    }
+}
+
+// Function to stop the current song
+void stop_song() {
+    if (current_song != NULL) {
+        Mix_HaltMusic(); // Stop the music
+        current_song = NULL;
+    }
+}
+
+// Function to switch to another song
+void switch_song(Mix_Music* new_song) {
+    if (current_song != new_song) {
+        stop_song();
+        play_song(new_song);
+    }
+}
+
+// Clean up SDL_mixer
+void clean_up() {
+    Mix_CloseAudio();
+    Mix_Quit();
+    SDL_Quit();
+}
 
 void initialize_game(){
      stair_room.height=0;
@@ -109,6 +171,7 @@ void setting_menu(int highlight){
 
 void game_menu(int highlight){
     char *choices[]={
+        "Profile",
         "New Game",
         "Resume",
         "Scoreboard",
@@ -136,6 +199,7 @@ int compare_score(const void *a,const void *b){
 }
 
 void setting_choice(int choice){
+    noecho();
     switch (choice)
     {
     case 0:
@@ -187,7 +251,6 @@ void setting_choice(int choice){
     clear();
     while(1){
         clear();
-        char *songs[2]={"starboy.mp3","save_your_tears.mp3"};
         attron(COLOR_PAIR(2));
         mvprintw(0,0,"=== MUSIC SETTING ===");
         attroff(COLOR_PAIR(2));
@@ -204,33 +267,21 @@ void setting_choice(int choice){
         int ch=getch();
         if(ch=='1'){
             choice_music=1;
-            system("pkill mpg123");
-            char command[100];
-            snprintf(command,sizeof(command),"nohup mpg123 -q %s > /dev/null 2>&1 &",songs[0]);
-            system(command);
-            printf("\e[?251");
-            fflush(stdout);
+            stop_song();
+            play_song(song1);
         }
         else if(ch=='2'){
             choice_music=2;
-            system("pkill mpg123");
-            char command[100];
-            snprintf(command,sizeof(command),"nohup mpg123 -q %s > /dev/null 2>&1 &",songs[1]);
-            system(command);
-            printf("\e[?251");
-            fflush(stdout);
+            stop_song();
+            play_song(song2);
         }
         else if(ch=='3'){
-                choice_music=3;
-                system("pkill mpg123");
-                printf("\e[?251");
-                fflush(stdout);
+                stop_song();
+                choice_music=-1;
         }
         else{
             break;
         }
-        printf("\e[?251");
-        fflush(stdout);
     }
     break;  
     case 3:
@@ -249,17 +300,37 @@ void game_choice(int choice){
      switch(choice){
         case 0:
         clear();
+        attron(COLOR_PAIR(5));
+        mvprintw(0,0,"=== PROFILE ===");
+        attroff(COLOR_PAIR(5));
+        if(strcmp("guest",current_player.user_name)!=0){
+        FILE *file=fopen("user.txt" , "r");
+        char line[2000];
+        char stored_name[100],stored_pass[100],stored_reminder[100],stored_email[300];
+        while(fgets(line,sizeof(line),file)){
+        sscanf(line,"name:%[^,],pass:%[^,],reminder:%[^,],email:%s",stored_name,stored_pass,stored_reminder,stored_email);
+        if(strcmp(stored_name,current_player.user_name)==0){
+            mvprintw(1,0,"NAME : %s",current_player.user_name);
+            mvprintw(2,0,"EMAIL : %s",stored_email);
+            break;
+        }
+        }
+        fclose(file);
+        }
+        refresh();
+        getch();
+        break;
+        case 1:
+        clear();
         initialize_game();
         new_game();
-        if(choice_music==1 || choice_music==2){
-            system("pkill mpg123");
-            printf("\e[?251");
-            fflush(stdout);
-        }
+        stop_song();
         color=0;
         choice_color=-1;
         choice_level=-1;
         choice_music=-1;
+        song1_position=0.0;
+        song2_position=0.0;  
         current_player.num_of_games++;
         current_player.gold+=Gold;
         if(win==1) current_player.score++;
@@ -297,22 +368,20 @@ void game_choice(int choice){
         fclose(score_file);
         initialize_game();
         break;
-        case 1:
+        case 2:
         clear();
         if(login_choice){
            char file_name[105];
            snprintf(file_name,sizeof(file_name),"%s.dat",current_player.user_name);
            if(access(file_name,F_OK)==0){
             resume_game();
-            if(choice_music==1 || choice_music==2){
-            system("pkill mpg123");
-            printf("\e[?251");
-            fflush(stdout);
-            }
+            stop_song();
             color=0;
             choice_color=-1;
             choice_level=-1;
             choice_music=-1;
+            song1_position=0.0;
+            song2_position=0.0;
             current_player.gold+=Gold;
             if(win==1) current_player.score++;
             if(win==1 || win==-1) current_player.experience++;
@@ -339,68 +408,93 @@ void game_choice(int choice){
            }
         }
         break;
-        case 2:
-        clear();
-        score_file=fopen("score.txt","r");
-        if(score_file){
-                while(fscanf(score_file,"%s %d %d %d %d",players[count].user_name,&players[count].gold,&players[count].score,&players[count].num_of_games,&players[count].experience)==5){
-                    count++;
-                }
-                fclose(score_file);
-        }
-        qsort(players,count,sizeof(Player),compare_score);
-        const wchar_t gold[]=L"\U0001F947";
-        const wchar_t silver[]=L"\U0001F948";
-        const wchar_t bronze[]=L"\U0001F949";
-        attron(COLOR_PAIR(5));
-        mvprintw(0,0,"=== SCORE BOARD ===");
-        attroff(COLOR_PAIR(5));
-        attron(COLOR_PAIR(2));
-        if(count){
-        mvaddnwstr(1,0,gold,-1);
-        if(strcmp(players[0].user_name,current_player.user_name)==0){
-            attron(A_BOLD);
-            mvprintw(1,3,"1.(GOAT) %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d",players[0].user_name,players[0].gold,players[0].score,players[0].num_of_games,players[0].experience);
-            attroff(A_BOLD);
-        }
-        else mvprintw(1,3,"1.(GOAT) %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d",players[0].user_name,players[0].gold,players[0].score,players[0].num_of_games,players[0].experience);
-        attroff(COLOR_PAIR(2));
-        attron(COLOR_PAIR(3));
-        if(count>1){
-        mvaddnwstr(2,0,silver,-1);
-        if(strcmp(players[1].user_name,current_player.user_name)==0){
-            attron(A_BOLD);
-            mvprintw(2,3,"2.(PRO) %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d",players[1].user_name,players[1].gold,players[1].score,players[1].num_of_games,players[1].experience);
-            attroff(A_BOLD);
-        }
-        else mvprintw(2,3,"2.(PRO) %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d",players[1].user_name,players[1].gold,players[1].score,players[1].num_of_games,players[1].experience);
-        }
-        attroff(COLOR_PAIR(3));
-        attron(COLOR_PAIR(4));
-        if(count>2){
-        mvaddnwstr(3,0,bronze,-1);
-        if(strcmp(players[2].user_name,current_player.user_name)==0){
-            attron(A_BOLD);
-            mvprintw(3,3,"3.(NOOB+) %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d",players[2].user_name,players[2].gold,players[2].score,players[2].num_of_games,players[2].experience);
-            attroff(A_BOLD);
-        }
-        else mvprintw(3,3,"3.(NOOB+) %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d",players[2].user_name,players[2].gold,players[2].score,players[2].num_of_games,players[2].experience);
-        }
-        attroff(COLOR_PAIR(4));
-        for(int i=3;i<count;i++){
-            if(strcmp(players[i].user_name,current_player.user_name)==0){
-                attron(A_BOLD);
-            }
-            mvprintw(i+1,3,"%d. %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d",i+1,players[i].user_name,players[i].gold,players[i].score,players[i].num_of_games,players[i].experience);
-            if(strcmp(players[i].user_name,current_player.user_name)==0){
-                attroff(A_BOLD);
-            }
-        }
-        }
-        refresh();
-        getch();
-        break;
         case 3:
+        clear(); 
+        noecho();
+        score_file = fopen("score.txt", "r");
+        if (score_file) {
+        while (fscanf(score_file, "%s %d %d %d %d", players[count].user_name, &players[count].gold, &players[count].score, &players[count].num_of_games, &players[count].experience) == 5) {
+            count++;
+        }
+        fclose(score_file);
+        }
+
+        qsort(players, count, sizeof(Player), compare_score); 
+
+        const wchar_t gold[] = L"\U0001F947";
+        const wchar_t silver[] = L"\U0001F948";
+        const wchar_t bronze[] = L"\U0001F949";
+
+        int first_visible_line = 0;  
+
+        attron(COLOR_PAIR(5));
+        mvprintw(0, 0, "=== SCORE BOARD ===");
+        attroff(COLOR_PAIR(5));
+
+        int ch;
+        while ((ch = getch()) != 'q') { 
+        clear();  
+        attron(COLOR_PAIR(5));
+        mvprintw(0, 0, "=== SCORE BOARD ===");
+        attroff(COLOR_PAIR(5));
+
+        for (int i = first_visible_line; i < first_visible_line + 1 && i < count; i++) {
+            int y_pos = i - first_visible_line + 1;  
+
+            if(i==0 || i==1 || i==2) attron(A_ITALIC); 
+            if(i==0) attron(COLOR_PAIR(2));
+            if(i==1) attron(COLOR_PAIR(3));
+            if(i==2) attron(COLOR_PAIR(4));
+
+            if (i == 0) mvaddnwstr(y_pos, 0, gold, -1);  
+            else if (i == 1) mvaddnwstr(y_pos, 0, silver, -1);  
+            else if (i == 2) mvaddnwstr(y_pos, 0, bronze, -1); 
+            if (strcmp(players[i].user_name, current_player.user_name) == 0) {
+                attron(A_BOLD); 
+                mvprintw(y_pos, 3, "%d. %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d", i + 1, players[i].user_name, players[i].gold, players[i].score, players[i].num_of_games, players[i].experience);
+                attroff(A_BOLD);
+            } else {
+                mvprintw(y_pos, 3, "%d. %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d", i + 1, players[i].user_name, players[i].gold, players[i].score, players[i].num_of_games, players[i].experience);
+            }
+
+            FILE *file_entry = fopen("player_entry.dat", "r");
+            if (file_entry != NULL) {
+                entry player_copy;
+                time_t curr_time = time(NULL);
+                while (fread(&player_copy, sizeof(entry), 1, file_entry)) {
+                    if (strcmp(player_copy.user_name, players[i].user_name) == 0) {
+                        double diff = difftime(curr_time, player_copy.entry_time);
+                        int hours = (int)(diff / 3600);
+                        int minutes = (int)((diff - hours * 3600) / 60);
+                        int seconds = (int)(diff - hours * 3600 - minutes * 60);
+                        mvprintw(y_pos + 1, 3, "%s entered the game %.2d:%.2d:%.2d ago.", player_copy.user_name, hours, minutes, seconds);
+                        break;
+                    }
+                }
+                fclose(file_entry);
+            }
+            if(i==0 || i==1 || i==2) attroff(A_ITALIC);
+            if(i==0) attroff(COLOR_PAIR(2));
+            if(i==1) attroff(COLOR_PAIR(3));
+            if(i==2) attroff(COLOR_PAIR(4));
+        }
+
+
+        if (ch == KEY_DOWN) {
+            if (first_visible_line + 1 < count) { 
+                first_visible_line += 1;
+            }
+        } else if (ch == KEY_UP) {
+            if (first_visible_line > 0) { 
+                first_visible_line -= 1;
+            }
+        }
+
+        refresh();
+    }
+
+    break;
+        case 4:
         quit_from_setting=1;
         clear();
         int highlight=0;
@@ -431,7 +525,7 @@ void game_choice(int choice){
             if(quit_from_setting==0) break;
         }
         break;
-        case 4:
+        case 5:
         clear();
         highlight=0;
         key;
@@ -637,15 +731,17 @@ void signup(void){
     getch();
     clear();
     strcpy(current_player.user_name,name);
+    strcpy(player_entry.user_name,name);
     break;   
     }
     current_player.score=0;
     current_player.gold=0;
     current_player.num_of_games=0;
     current_player.experience=0;
-    // FILE *score_file=fopen("score.dat","r+b");
-    // fwrite(&current_player,sizeof(Player),1,score_file);
-    // fclose(score_file);
+    FILE *file_entry=fopen("player_entry.dat","a");
+    player_entry.entry_time=time(NULL);
+    fwrite(&player_entry,sizeof(entry),1,file_entry);
+    fclose(file_entry);
     int highlight=0;
     int key;
     int choice=-1;
@@ -659,7 +755,7 @@ void signup(void){
                 }
                 break;
             case KEY_DOWN:
-                if (highlight < 4) { 
+                if (highlight < 5) { 
                     highlight++;
                 }
                 break;
@@ -764,7 +860,7 @@ void login(void){
                 }
                 break;
             case KEY_DOWN:
-                if (highlight < 4) { 
+                if (highlight < 5) { 
                     highlight++;
                 }
                 break;
@@ -804,7 +900,7 @@ void guest(void){
                 }
                 break;
             case KEY_DOWN:
-                if (highlight < 4) { 
+                if (highlight < 5) { 
                     highlight++;
                 }
                 break;
@@ -1141,6 +1237,11 @@ int main(){
     cbreak();
     echo();
     start_color();
+    init_sdl_mixer();
+    song1 = Mix_LoadMUS("starboy.mp3");
+    song2 = Mix_LoadMUS("save_your_tears.mp3");
+    song3 = Mix_LoadMUS("enchanted.mp3");
+    song4 = Mix_LoadMUS("treasure.mp3");
     if(has_colors()){
         init_color(COLOR_BLACK,49 * 1000/255,2*1000/255,54*1000/255);
         init_pair(1,COLOR_RED,COLOR_BLACK);
@@ -1177,6 +1278,7 @@ int main(){
     }
     if(quit==0) break;
     }
+    clean_up();
     curs_set(0);
     endwin();
     return 0;
