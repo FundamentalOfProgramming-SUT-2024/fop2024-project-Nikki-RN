@@ -1370,11 +1370,11 @@ void game(int entering,int which_floor,char **floor,room rooms[MAX_ROOMS],door d
                 if (food_collected > 0 && hunger > 0) {
                     food_collected--;
                     hunger--;
-                    if(spell=='h' && health_count<10){
+                    if(spell=='h' && health_count<5){
                        Health+=2;
                        health_count++;
                     } 
-                    else if(spell=='h' && health_count>=10){
+                    else if(spell=='h' && health_count>=5){
                         spell='n';
                         health_count=0;
                     }
