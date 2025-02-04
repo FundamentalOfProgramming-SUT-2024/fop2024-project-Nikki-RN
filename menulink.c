@@ -404,12 +404,41 @@ void game_choice(int choice){
             if (i == 0) mvaddnwstr(y_pos, 0, gold, -1);  
             else if (i == 1) mvaddnwstr(y_pos, 0, silver, -1);  
             else if (i == 2) mvaddnwstr(y_pos, 0, bronze, -1); 
+            if(i==0){
+                if (strcmp(players[i].user_name, current_player.user_name) == 0) {
+                attron(A_BOLD); 
+                mvprintw(y_pos, 3, "%d.(GOAT) %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d", i + 1, players[i].user_name, players[i].gold, players[i].score, players[i].num_of_games, players[i].experience);
+                attroff(A_BOLD);
+                } else {
+                mvprintw(y_pos, 3, "%d.(GOAT) %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d", i + 1, players[i].user_name, players[i].gold, players[i].score, players[i].num_of_games, players[i].experience);
+                }
+            }
+            else if(i==1){
+                if (strcmp(players[i].user_name, current_player.user_name) == 0) {
+                attron(A_BOLD); 
+                mvprintw(y_pos, 3, "%d.(PRO) %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d", i + 1, players[i].user_name, players[i].gold, players[i].score, players[i].num_of_games, players[i].experience);
+                attroff(A_BOLD);
+                } else {
+                mvprintw(y_pos, 3, "%d.(PRO) %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d", i + 1, players[i].user_name, players[i].gold, players[i].score, players[i].num_of_games, players[i].experience);
+                }
+            }
+            else if(i==2){
+                if (strcmp(players[i].user_name, current_player.user_name) == 0) {
+                attron(A_BOLD); 
+                mvprintw(y_pos, 3, "%d.(NOOB+) %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d", i + 1, players[i].user_name, players[i].gold, players[i].score, players[i].num_of_games, players[i].experience);
+                attroff(A_BOLD);
+                } else {
+                mvprintw(y_pos, 3, "%d.(NOOB+) %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d", i + 1, players[i].user_name, players[i].gold, players[i].score, players[i].num_of_games, players[i].experience);
+                }
+            }
+            else{
             if (strcmp(players[i].user_name, current_player.user_name) == 0) {
                 attron(A_BOLD); 
                 mvprintw(y_pos, 3, "%d. %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d", i + 1, players[i].user_name, players[i].gold, players[i].score, players[i].num_of_games, players[i].experience);
                 attroff(A_BOLD);
             } else {
                 mvprintw(y_pos, 3, "%d. %s - GOLD:%d - SCORE:%d - NUM-OF-GAMES:%d - XP:%d", i + 1, players[i].user_name, players[i].gold, players[i].score, players[i].num_of_games, players[i].experience);
+            }
             }
 
             FILE *file_entry = fopen("player_entry.dat", "r");
